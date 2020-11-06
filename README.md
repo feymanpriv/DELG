@@ -1,4 +1,4 @@
-# deglr-pytorch (for experiment)
+# DELG-pytorch
 Pytorch Implementation of Unifying Deep Local and Global Features for Image Search
 
 - DELG pipline:
@@ -36,9 +36,9 @@ Extracting global and local feature for multi-scales
 ```
 python extraction/extractor.py --cfg configs/resnet_delg_8gpu.yaml
 ```
-Refer [`extractor.sh`](extraction/extractor.sh) for using multicards
+Refer [`extractor.sh`](extraction/extract.sh) for using multicards
 
-See [`visualize.ipynb`](extraction/vis/visualize.ipynb) for verification of local features
+See [`visualize.ipynb`](extraction/vis/attention/visualize.ipynb) for verification of local features
 
 ## Evaluation on ROxf and RPar
 
