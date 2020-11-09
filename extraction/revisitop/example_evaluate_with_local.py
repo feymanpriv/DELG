@@ -8,11 +8,12 @@
 # Authors: Radenovic F., Iscen A., Tolias G., Avrithis Y., Chum O., 2018
 # Written by Yang Min, Shi Baorong, 2020
 
-import os
+import os, sys
 import os.path as osp
 import io
 import pickle
 import copy
+import gc
 
 import numpy as np
 import pydegensac
@@ -20,6 +21,7 @@ import pydegensac
 from scipy.io import loadmat
 from scipy import spatial
 import matplotlib.pyplot as plt
+from concurrent import futures
 
 from skimage import feature
 from skimage import io as skio
@@ -34,14 +36,15 @@ test_dataset = 'roxford5k'
 print('>> {}: Evaluating test dataset...'.format(test_dataset)) 
 IMAGE_PATH = os.path.join(data_root, 'datasets', test_dataset, 'jpg')
 GLOBAL_FEATURE_PATH='roxford5k512gem_delg_res50_3global.mat'
-LOCAL_FEATURE_PATH='roxford5k_s512_newlocalfea.pickle'
+LOCAL_FEATURE_PATH='roxford5k__s512_localfea.pickle'
+ASMK_SCORE_PATH='localfeatures/delg_asmk_6553.pkl'
 
 NUM_RERANK = 100
 MAX_REPROJECTION_ERROR = 20.0
 MAX_RANSAC_ITERATIONS = 1000
 HOMOGRAPHY_CONFIDENCE = 1.0
-MATCHING_THRESHOLD = 0.95
-MAX_DISTANCE = 0.95
+MATCHING_THRESHOLD = 1.0
+MAX_DISTANCE = 0.99
 USE_RATIO_TEST = False
 DRAW_MATCHES = False
 
@@ -54,7 +57,7 @@ def global_search(global_feature_path):
 
     sim = np.dot(X, Q.T)
     ranks = np.argsort(-sim, axis=0)
-    np.save("ranks_before_gv.npy", ranks)
+    #np.save("ranks_before_gv.npy", ranks)
     return ranks
 
 
@@ -123,7 +126,7 @@ def compute_num_inliers(test_keypoints,
                                                 use_ratio_test=use_ratio_test)
     if test_match_kp.shape[
           0] <= 4:  # Min keypoints supported by `pydegensac.findHomography()`
-        return 0
+        return 0, b''
 
     try:
         _, mask = pydegensac.findHomography(test_match_kp, train_match_kp,
@@ -131,7 +134,7 @@ def compute_num_inliers(test_keypoints,
                                             HOMOGRAPHY_CONFIDENCE,
                                             MAX_RANSAC_ITERATIONS)
     except np.linalg.LinAlgError:  # When det(H)=0, can't invert matrix.
-        return 0
+        return 0, b''
 
     inliers = mask if mask is not None else []
 
@@ -164,7 +167,7 @@ def compute_num_inliers(test_keypoints,
 
 def rerankGV(cfg, local_feature_path, ranks_before_gv, ranks_after_gv=None):
     gnd = cfg['gnd']
-    print('>> reranking ........')
+    print('>> reranking ...')
     ranks_after_gv = ranks_before_gv
     train_ids = [x + cfg['ext'] for x in cfg['imlist']]
     test_ids = [x + cfg['qext'] for x in cfg['qimlist']]
@@ -182,8 +185,8 @@ def rerankGV(cfg, local_feature_path, ranks_before_gv, ranks_after_gv=None):
 
         inliers_numrerank = np.zeros(NUM_RERANK)
         for j in range(NUM_RERANK):
-            #if ranks_before_gv[j, i] in gnd[i]['junk']:
-                #continue
+            if ranks_before_gv[j, i] in gnd[i]['junk']:
+                continue
             index_img = train_ids[ranks_before_gv[j, i]]
             index_array = skio.imread(osp.join(IMAGE_PATH, index_img))
             tlocations=local_features[index_img]["locations"]
@@ -197,13 +200,84 @@ def rerankGV(cfg, local_feature_path, ranks_before_gv, ranks_after_gv=None):
                                                      index_im_array=index_array)
                 # local_score = min(num_inliers, MAX_INLIER_SCORE) / MAX_INLIER_SCORE
                 if DRAW_MATCHES:
-                    with open(osp.join(data_root, "datasets", test_dataset, "testcv2", test_img.split(".")[0] + \
-                            "," + index_img.split(".")[0] + ".jpg"), "wb") as fout:
+                    with open(osp.join(data_root, "datasets", test_dataset, "savematches", \
+                        test_img.split(".")[0] + "," + index_img.split(".")[0] + ".jpg"), "wb") as fout:
                         fout.write(match_vis_bytes)
                 inliers_numrerank[j] = num_inliers
             except:
                 continue
         ranks_after_gv[:NUM_RERANK, i] = ranks_before_gv[np.argsort(-1 * inliers_numrerank), i]
+    return ranks_before_gv, ranks_after_gv
+
+
+def localRank(cfg, tuple_local_features, train_ids, test_ids, ranks_before_gv):
+    gnd = cfg['gnd']
+    query_name, part_local_features = tuple_local_features
+    print(">> rerank {}".format(query_name))
+
+    i = test_ids.index(query_name)
+    test_array = skio.imread(osp.join(IMAGE_PATH,query_name))    
+    locations = part_local_features[query_name]["locations"]
+    descriptors = part_local_features[query_name]["descriptors"]
+    inliers_numrerank = np.zeros(NUM_RERANK)  
+    
+    for j in range(NUM_RERANK):
+        if ranks_before_gv[j, i] in gnd[i]['junk']:
+            continue
+        index_img = train_ids[ranks_before_gv[j, i]]
+        index_array = skio.imread(osp.join(IMAGE_PATH, index_img))
+        tlocations=part_local_features[index_img]["locations"]
+        tdescriptors = part_local_features[index_img]["descriptors"]
+        try:
+            num_inliers, match_vis_bytes = compute_num_inliers(locations, descriptors,
+                                                 tlocations, tdescriptors,
+                                                 use_ratio_test=USE_RATIO_TEST,
+                                                 draw_matches=DRAW_MATCHES,
+                                                 query_im_array=test_array, 
+                                                 index_im_array=index_array)
+            # local_score = min(num_inliers, MAX_INLIER_SCORE) / MAX_INLIER_SCORE
+            if DRAW_MATCHES:
+                with open(osp.join(data_root, "datasets", test_dataset, "testcv2", test_img.split(".")[0] + \
+                        "," + index_img.split(".")[0] + ".jpg"), "wb") as fout:
+                    fout.write(match_vis_bytes)
+            inliers_numrerank[j] = num_inliers
+        except:
+            continue
+    return i, inliers_numrerank
+
+
+def rerankGV_mulprocess(cfg, local_feature_path, ranks_before_gv, ranks_after_gv=None):
+    print('>> mulprocess reranking ...')
+    ranks_after_gv = ranks_before_gv
+    train_ids = [x + cfg['ext'] for x in cfg['imlist']]
+    test_ids = [x + cfg['qext'] for x in cfg['qimlist']]
+
+    with open(osp.join(data_root, "localfeatures", local_feature_path), "rb") as fin:
+        local_features = pickle.load(fin)
+    print(">> local features loaded ...")
+    
+    # fix multiprocess memery problem :struct.error: 'i' format requires -2147483648 <= number <= 2147483647
+    N_localfeatures = []
+    for query_rank in range(len(test_ids)):
+        query_idx = test_ids[query_rank]
+        fea_dic = {}
+        fea_dic[query_idx] = local_features[query_idx]
+        for k in range(NUM_RERANK):
+            index_rank = ranks_before_gv[k, query_rank]
+            index_idx = train_ids[index_rank]
+            fea_dic[index_idx] = local_features[index_idx]
+        N_localfeatures.append((query_idx, fea_dic))
+    
+    del local_features
+    gc.collect()
+        
+    with futures.ProcessPoolExecutor(max_workers=24) as executor:
+        executor_dict = {executor.submit(localRank, cfg, tuple_fea, train_ids, test_ids, ranks_before_gv): \
+                        tuple_fea for tuple_fea in N_localfeatures}
+        
+    for future in futures.as_completed(executor_dict):
+        query_idx, inliers_numrerank = future.result()
+        ranks_after_gv[:NUM_RERANK, query_idx] = ranks_before_gv[np.argsort(-1 * inliers_numrerank), query_idx]
     return ranks_before_gv, ranks_after_gv
 
 
@@ -250,12 +324,39 @@ def main():
     ranks = global_search(GLOBAL_FEATURE_PATH) 
     reportMAP(test_dataset, cfg, ranks)
     
-    _, ranks_after_gv = rerankGV(cfg, LOCAL_FEATURE_PATH, ranks)
+    #_, ranks_after_gv = rerankGV(cfg, LOCAL_FEATURE_PATH, ranks)
+    _, ranks_after_gv = rerankGV_mulprocess(cfg, LOCAL_FEATURE_PATH, ranks)
+    #np.save("ranks_after_gv.npy", ranks_after_gv)
     reportMAP(test_dataset, cfg, ranks_after_gv)
 
     print("Done!")
 
 
-if __name__ == '__main__':
-    main()
+def rankASMK():
+    cfg = configdataset(test_dataset, data_root)
 
+    ranks = global_search(GLOBAL_FEATURE_PATH) 
+
+    reportMAP(test_dataset, cfg, ranks)
+    
+    with open(ASMK_SCORE_PATH, "rb") as fin:
+        scores = pickle.load(fin)
+        print("scores", scores.shape)
+    
+    ranks = ranks.T
+    ranks_after = ranks
+
+    for i in range(ranks.shape[0]):
+        asmk_scores = scores[i, ranks[i, :NUM_RERANK]]
+        ranks_after[i, :NUM_RERANK] = ranks[i, np.argsort(-1 * asmk_scores)]
+
+    reportMAP(test_dataset, cfg, ranks_after.T)
+    print("Done!")
+
+   
+if __name__ == "__main__":
+    if len(sys.argv)>1 :
+        func = getattr(sys.modules[__name__], sys.argv[1])
+        func(*sys.argv[2:])
+    else:
+        print('tools.py command', file=sys.stderr)
