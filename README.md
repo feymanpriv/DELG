@@ -49,7 +49,7 @@ See (https://github.com/filipradenovic/revisitop) for details
 - Spatial Verification
 ```
 cd extraction/revisitop
-python example_evaluate_with_local.py
+python example_evaluate_with_local.py main
 ```
 
 - ASMK (updating)
