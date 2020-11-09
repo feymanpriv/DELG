@@ -39,7 +39,6 @@ class SpatialAttention2d(nn.Module):
     '''
     SpatialAttention2d
     2-layer 1x1 conv network with softplus activation.
-    <!!!> attention score normalization will be added for experiment.
     '''
     def __init__(self, in_c, act_fn='relu'):
         super(SpatialAttention2d, self).__init__()
