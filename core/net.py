@@ -140,14 +140,14 @@ def set_flat_weights(model, flat_weights):
 
 
 def freeze_weights(model, freeze=[]):
-    for name, child in model.named_children():
+    for name, child in model.module.named_children():
         if name in freeze:
             for param in child.parameters():
                 param.requires_grad = False
 
 
 def unfreeze_weights(model, freeze=[]):
-    for name, child in model.named_children():
+    for name, child in model.module.named_children():
         if name in freeze:
             for param in child.parameters():
                 param.requires_grad = True

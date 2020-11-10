@@ -91,18 +91,16 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
         # Compute the loss
         desc_loss = loss_fun(global_logits, labels)
         att_loss = loss_fun(local_logits, labels)
-        #loss = desc_loss + att_loss
         # Perform the backward pass
         optimizer.zero_grad()
-        # Unfreeze globalmodel
-        net.unfreeze_weights(model, freeze=['globalmodel', 'desc_cls']) 
-        desc_loss.backward()
         # Freeze globalmodel
         net.freeze_weights(model, freeze=['globalmodel', 'desc_cls']) 
         att_loss.backward()
-        #loss.backward()
+        # Unfreeze globalmodel
+        net.unfreeze_weights(model, freeze=['globalmodel', 'desc_cls']) 
+        desc_loss.backward()
+        # update params
         optimizer.step()
-
         # Compute the errors
         desc_top1_err, desc_top5_err = meters.topk_errors(global_logits, labels, [1, 5])
         desc_loss, desc_top1_err, desc_top5_err = dist.scaled_all_reduce([desc_loss, desc_top1_err, desc_top5_err])
