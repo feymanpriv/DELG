@@ -2,7 +2,7 @@
 Pytorch Implementation of Unifying Deep Local and Global Features for Image Search ([delg-eccv20](https://arxiv.org/pdf/2001.05027.pdf))
 
 - DELG pipline:
-<p align="center"><img width="90%" src="extraction/vis/delg_pipline.png" /></p>
+<p align="center"><img width="90%" src="tools/vis/delg_pipline.png" /></p>
 
 ## Installation
 
@@ -34,29 +34,31 @@ python train_delg.py \
 
 Extracting global and local feature for multi-scales
 ```
-python extraction/extractor.py --cfg configs/resnet_delg_8gpu.yaml
+python tools/extractor.py --cfg configs/resnet_delg_8gpu.yaml
 ```
-Refer [`extractor.sh`](extraction/extract.sh) for using multicards
+Refer [`extractor.sh`](tools/extract.sh) for using multicards
 
-See [`visualize.ipynb`](extraction/vis/attention/visualize.ipynb) for verification of local features
+See [`visualize.ipynb`](tools/vis/attention/visualize.ipynb) for verification of local features
 
 ## Evaluation on ROxf and RPar
-
-See (https://github.com/filipradenovic/revisitop) for details
 
 ### Local Match
 
 - Spatial Verification
-```
-cd extraction/revisitop
-python example_evaluate_with_local.py main
-```
+
+Install [**pydegensac**](https://github.com/ducha-aiki/pydegensac)
+See tools/rerank/spatial_verification.py
+
+- Examples
+<p align="center"><img width="90%" src="tools/vis/matches/match_example_1.jpg" /></p>
 
 - ASMK (updating)
 
-- Examples
-<p align="center"><img width="90%" src="extraction/vis/matches/match_example_1.jpg" /></p>
+### Results 
 
-### Results
+See (https://github.com/filipradenovic/revisitop) for details
 
-(on going)
+```
+cd tools/revisitop
+python example_evaluate_with_local.py main
+```
