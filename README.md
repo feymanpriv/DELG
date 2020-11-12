@@ -46,9 +46,7 @@ See [`visualize.ipynb`](tools/vis/attention/visualize.ipynb) for verification of
 
 - Spatial Verification
 
-    Install [**pydegensac**](https://github.com/ducha-aiki/pydegensac)
-    
-    See tools/rerank/spatial_verification.py
+    Install [**pydegensac**](https://github.com/ducha-aiki/pydegensac) and see tools/rerank/spatial_verification.py
 
 - Examples
 <p align="center"><img width="90%" src="tools/vis/matches/match_example_1.jpg" /></p>
