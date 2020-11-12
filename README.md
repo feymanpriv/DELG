@@ -1,5 +1,5 @@
 # DELG-pytorch
-Pytorch Implementation of Unifying Deep Local and Global Features for Image Search
+Pytorch Implementation of Unifying Deep Local and Global Features for Image Search ([delg-eccv20](https://arxiv.org/pdf/2001.05027.pdf))
 
 - DELG pipline:
 <p align="center"><img width="90%" src="extraction/vis/delg_pipline.png" /></p>
