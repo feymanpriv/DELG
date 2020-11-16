@@ -65,6 +65,7 @@ python example_evaluate_with_local.py main
 ```
 
 - on roxford5k
+
 |  Backbone | Train Size | Method | mAP E | mAP M | mAP H |
 |--------------|:-------:|:------:|:-------:|:------------:|:-------------:|
 |  ResNet50  |    224  |  Global Ranking                | 77.73 | **66.06** | 38.37 |
