@@ -69,9 +69,9 @@ python example_evaluate_with_local.py main
 |  Backbone | Train Size | Method | mAP E | mAP M | mAP H |
 |--------------|:-------:|:------:|:-------:|:------------:|:-------------:|
 |  ResNet50  |    224  |  Global Ranking                | 77.73 | **66.06** | 38.37 |
-|  ResNet50  |    224  |  Global (3scales)              | 81.03 | **68.31** | 39.98 |
+|  ResNet50  |    224  |  Global                        | 81.03 | **68.31** | 39.98 |
 |  ResNet50  |    224  |  Global + Spatial Verification | 84.81 | **71.97** | 46.63 |
-|  ResNet50  |    512  |  Global (3scales)              | 90.55 | **78.51** | 56.90 |
+|  ResNet50  |    512  |  Global                        | 90.55 | **78.51** | 56.90 |
 |  ResNet50  |    512  |  Global + Spatial Verification | 90.86 | **80.08** | 58.42 |
 
 - on rparis6k(updating)
