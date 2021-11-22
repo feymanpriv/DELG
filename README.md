@@ -29,7 +29,8 @@ python train_delg.py \
     PORT 12001 \
     TRAIN.WEIGHTS path/to/pretrainedmodel
 ```
-Training from resume: 
+Resume training: 
+
 ```
 python train_delg.py \
     --cfg configs/metric/resnet_delg_8gpu.yaml \
