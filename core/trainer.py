@@ -171,7 +171,7 @@ def train_model():
         last_checkpoint = checkpoint.get_last_checkpoint()
         checkpoint_epoch = checkpoint.load_checkpoint(last_checkpoint, model, optimizer)
         logger.info("Loaded checkpoint from: {}".format(last_checkpoint))
-        start_epoch = checkpoint_epoch + 1
+        start_epoch = int(checkpoint_epoch['epoch']) + 1
     elif cfg.TRAIN.WEIGHTS:
         checkpoint.load_checkpoint(cfg.TRAIN.WEIGHTS, model)
         logger.info("Loaded initial weights from: {}".format(cfg.TRAIN.WEIGHTS))
