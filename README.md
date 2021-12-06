@@ -39,6 +39,11 @@ python train_delg.py \
     TRAIN.AUTO_RESUME True
 ```
 
+## Weights
+-[r50-delg](https://pan.baidu.com/s/1rbB1ZItdMsyCiU5YrUbkCA) (wu46)
+-[r101-delg](https://pan.baidu.com/s/1cahOcy9hx23RqHgBcKp1uQ)  (5pdj) 
+
+
 ## Feature extraction
 
 Extracting global and local feature for multi-scales
