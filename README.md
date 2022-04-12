@@ -50,6 +50,7 @@ pretrained weeights are available in [pymetric](https://github.com/feymanpriv/py
 
 ## Feature extraction
 
+#### !!! Queries should be cropped as [DOLG](https://github.com/feymanpriv/DOLG/blob/main/evaler/infer.py#L83).
 Extracting global and local feature for multi-scales
 ```
 python tools/extractor.py --cfg configs/resnet_delg_8gpu.yaml
